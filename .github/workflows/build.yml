@@ -1,0 +1,35 @@
+name: "Build iOS app"
+
+# on: [push]
+on: [workflow_dispatch]
+
+jobs:
+  build_ios:
+    runs-on: macos-latest
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: build archive and ipaify
+        run: |
+          wget -O archive.zip "https://www.dropbox.com/scl/fi/adv8r7j9v7f4er0h2kb02/0155028c-0b32-11f1-9fa8-44fa66f2373a.zip?rlkey=ttqdlv4tiu2myphtgjtmtkv8c&dl=1"
+          unzip archive.zip -d .
+
+          xcodebuild archive -project fingame.xcodeproj -scheme 'fingame' -archivePath fingame.xcarchive -configuration Release CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
+
+          mkdir Payload
+          mv fingame.xcarchive/Products/Applications/fingame.app Payload/fingame.app
+
+          zip -r "fingame.ipa" "Payload"
+
+          mv fingame.ipa ${{ runner.temp }}/fingame.ipa
+
+
+      - name: Upload application
+        uses: actions/upload-artifact@v4
+        with:
+          name: fingame
+          path: ${{ runner.temp }}/fingame.ipa
+          # you can also archive the entire directory
+          # path: ${{ runner.temp }}/build
+          retention-days: 3
